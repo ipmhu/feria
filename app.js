@@ -54,10 +54,75 @@ async function supabaseQuery(table, method = 'GET', body = null, filters = '') {
 // ============================================================
 function solicitarPinAdmin() {
   if (MODO_ADMIN) {
-    // Si ya está activo, lo desactiva directamente
-    desactivarModoAdmin();
+    MODO_ADMIN = false;
+    document.getElementById('btn-modo-admin').textContent = '⚙ MODO ADMIN';
+    document.getElementById('btn-modo-admin').classList.remove('activo');
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    showToast('🔒 Modo administrador desactivado', 'success');
+    cargarResultados();
     return;
   }
+  
+  document.getElementById('eval-overlay').style.display = 'block';
+  document.getElementById('eval-proyecto-nombre').textContent = 'PIN DE ADMINISTRADOR';
+  document.getElementById('eval-content').innerHTML = `
+    <div style="text-align:center;padding:2rem 0;">
+      <div style="font-size:18px;font-weight:700;">PIN de Administrador</div>
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:2rem;">Ingresa el PIN de 6 dígitos para activar el modo administrador</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d1" data-next="2" data-prev="1" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d2" data-next="3" data-prev="1" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d3" data-next="4" data-prev="2" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d4" data-next="5" data-prev="3" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d5" data-next="6" data-prev="4" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d6" data-prev="5" autocomplete="off"/>
+      </div>
+      <div class="error-msg" id="admin-pin-error" style="display:none;"></div>
+      <button class="btn-primary" id="btn-verificar-admin-pin" style="max-width:300px;">VERIFICAR</button>
+    </div>`;
+
+  // Configurar todos los inputs de PIN
+  document.querySelectorAll('#admin-pin-d1, #admin-pin-d2, #admin-pin-d3, #admin-pin-d4, #admin-pin-d5, #admin-pin-d6').forEach(input => {
+    // Auto-foco al escribir
+    input.addEventListener('input', function(e) {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value.length === 1) {
+        const next = this.dataset.next;
+        if (next) document.getElementById('admin-pin-d' + next)?.focus();
+      }
+    });
+
+    // Navegación con teclas
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '') {
+        const prev = this.dataset.prev;
+        if (prev) {
+          const prevInput = document.getElementById('admin-pin-d' + prev);
+          if (prevInput) {
+            prevInput.value = '';
+            prevInput.focus();
+          }
+        }
+      } else if (e.key === 'ArrowLeft') {
+        const prev = this.dataset.prev;
+        if (prev) document.getElementById('admin-pin-d' + prev)?.focus();
+      } else if (e.key === 'ArrowRight') {
+        const next = this.dataset.next;
+        if (next) document.getElementById('admin-pin-d' + next)?.focus();
+      } else if (e.key === 'Enter') {
+        verificarPinAdmin();
+      }
+    });
+  });
+
+  document.getElementById('btn-verificar-admin-pin').addEventListener('click', verificarPinAdmin);
+  
+  // Foco inicial
+  setTimeout(() => {
+    document.getElementById('admin-pin-d1')?.focus();
+    document.getElementById('admin-pin-d1')?.select();
+  }, 100);
+}
   
   document.getElementById('eval-overlay').style.display = 'block';
   document.getElementById('eval-proyecto-nombre').textContent = 'PIN DE ADMINISTRADOR';
@@ -85,24 +150,38 @@ function pinFocusAdmin(el, idx) {
 
 async function verificarPinAdmin() {
   let pin = '';
-  for (let i = 1; i <= 4; i++) pin += (document.getElementById('admin-pin-d' + i)?.value || '');
+  for (let i = 1; i <= 6; i++) pin += (document.getElementById('admin-pin-d' + i)?.value || '');
   const err = document.getElementById('admin-pin-error');
 
-  if (pin.length < 4) { err.textContent = '⚠ Ingresa 4 dígitos'; err.style.display = 'block'; return; }
+  if (pin.length < 6) { 
+    err.textContent = '⚠ Ingresa los 6 dígitos del PIN'; 
+    err.style.display = 'block'; 
+    return; 
+  }
 
   try {
     const admins = await supabaseQuery('admin_pins', 'GET', null, `pin=eq.${pin}`);
     if (admins.length > 0) {
-      activarModoAdmin();
+      MODO_ADMIN = true;
+      const btn = document.getElementById('btn-modo-admin');
+      btn.textContent = '⚙ MODO ADMIN (ACTIVO)';
+      btn.classList.add('activo');
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
       document.getElementById('eval-overlay').style.display = 'none';
       showToast('🔓 Modo administrador activado', 'success');
+      cargarResultados();
     } else {
-      err.textContent = '⚠ PIN incorrecto'; err.style.display = 'block';
-      for (let i = 1; i <= 4; i++) { const d = document.getElementById('admin-pin-d' + i); if (d) d.value = ''; }
+      err.textContent = '⚠ PIN incorrecto'; 
+      err.style.display = 'block';
+      for (let i = 1; i <= 6; i++) { 
+        const d = document.getElementById('admin-pin-d' + i); 
+        if (d) d.value = ''; 
+      }
       document.getElementById('admin-pin-d1')?.focus();
     }
-  } catch(e) {
-    err.textContent = '⚠ Error al verificar'; err.style.display = 'block';
+  } catch(e) { 
+    err.textContent = '⚠ Error al verificar'; 
+    err.style.display = 'block'; 
   }
 }
 
