@@ -27,7 +27,8 @@
       <div class="nav-item" data-view="resultados"><span class="nav-icon">◉</span> Resultados</div>
     </nav>
     <div class="sidebar-footer">
-<button class="btn-logout" onclick="solicitarPinAdmin()" id="btn-modo-admin">⚙ MODO ADMIN</button>    </div>
+      <button class="btn-logout" onclick="solicitarPinAdmin()" id="btn-modo-admin">⚙ MODO ADMIN</button>
+    </div>
   </aside>
 
   <main class="main-content">
@@ -143,6 +144,9 @@ async function supabaseQuery(table, method = 'GET', body = null, filters = '') {
   try { return JSON.parse(text); } catch(e) { return []; }
 }
 
+// ============================================================
+// MODO ADMIN - SOLICITAR PIN (6 DÍGITOS)
+// ============================================================
 function solicitarPinAdmin() {
   if (MODO_ADMIN) {
     MODO_ADMIN = false;
@@ -153,35 +157,59 @@ function solicitarPinAdmin() {
     cargarResultados();
     return;
   }
+
   document.getElementById('eval-overlay').style.display = 'block';
   document.getElementById('eval-proyecto-nombre').textContent = 'PIN DE ADMINISTRADOR';
   document.getElementById('eval-content').innerHTML = `
     <div style="text-align:center;padding:2rem 0;">
       <div style="font-size:18px;font-weight:700;">PIN de Administrador</div>
-      <div style="font-size:10px;color:var(--text-dim);margin-bottom:2rem;">Ingresa el PIN para activar el modo administrador</div>
-      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:1.5rem;">
-        ${[1,2,3,4].map(i => `<input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d${i}" onkeyup="pinFocusAdmin(this,${i})"/>`).join('')}
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:2rem;">Ingresa el PIN de 6 dígitos</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d1" data-next="2" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d2" data-next="3" data-prev="1" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d3" data-next="4" data-prev="2" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d4" data-next="5" data-prev="3" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d5" data-next="6" data-prev="4" autocomplete="off"/>
+        <input class="pin-digit" maxlength="1" type="password" inputmode="numeric" id="admin-pin-d6" data-prev="5" autocomplete="off"/>
       </div>
       <div class="error-msg" id="admin-pin-error" style="display:none;"></div>
       <button class="btn-primary" id="btn-verificar-admin-pin" style="max-width:300px;">VERIFICAR</button>
     </div>`;
-  setTimeout(() => document.getElementById('admin-pin-d1')?.focus(), 100);
-  document.getElementById('btn-verificar-admin-pin').addEventListener('click', verificarPinAdmin);
-  document.querySelectorAll('#admin-pin-d1, #admin-pin-d2, #admin-pin-d3, #admin-pin-d4').forEach(i => {
-    i.addEventListener('keydown', e => { if (e.key === 'Enter') verificarPinAdmin(); });
-  });
-}
 
-function pinFocusAdmin(el, idx) {
-  el.value = el.value.replace(/[^0-9]/g, '');
-  if (el.value.length === 1 && idx < 4) document.getElementById('admin-pin-d' + (idx + 1))?.focus();
+  // Configurar navegación por teclado
+  const ids = ['admin-pin-d1', 'admin-pin-d2', 'admin-pin-d3', 'admin-pin-d4', 'admin-pin-d5', 'admin-pin-d6'];
+  ids.forEach(id => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value.length === 1 && this.dataset.next) {
+        document.getElementById('admin-pin-d' + this.dataset.next)?.focus();
+      }
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && this.dataset.prev) {
+        const prev = document.getElementById('admin-pin-d' + this.dataset.prev);
+        if (prev) { prev.value = ''; prev.focus(); }
+      } else if (e.key === 'ArrowLeft' && this.dataset.prev) {
+        document.getElementById('admin-pin-d' + this.dataset.prev)?.focus();
+      } else if (e.key === 'ArrowRight' && this.dataset.next) {
+        document.getElementById('admin-pin-d' + this.dataset.next)?.focus();
+      } else if (e.key === 'Enter') {
+        verificarPinAdmin();
+      }
+    });
+  });
+
+  document.getElementById('btn-verificar-admin-pin').addEventListener('click', verificarPinAdmin);
+  setTimeout(() => document.getElementById('admin-pin-d1')?.focus(), 100);
 }
 
 async function verificarPinAdmin() {
   let pin = '';
-  for (let i = 1; i <= 4; i++) pin += (document.getElementById('admin-pin-d' + i)?.value || '');
+  for (let i = 1; i <= 6; i++) pin += (document.getElementById('admin-pin-d' + i)?.value || '');
   const err = document.getElementById('admin-pin-error');
-  if (pin.length < 4) { err.textContent = '⚠ Ingresa 4 dígitos'; err.style.display = 'block'; return; }
+  if (pin.length < 6) { err.textContent = '⚠ Ingresa los 6 dígitos'; err.style.display = 'block'; return; }
   try {
     const admins = await supabaseQuery('admin_pins', 'GET', null, `pin=eq.${pin}`);
     if (admins.length > 0) {
@@ -195,12 +223,15 @@ async function verificarPinAdmin() {
       cargarResultados();
     } else {
       err.textContent = '⚠ PIN incorrecto'; err.style.display = 'block';
-      for (let i = 1; i <= 4; i++) { const d = document.getElementById('admin-pin-d' + i); if (d) d.value = ''; }
+      for (let i = 1; i <= 6; i++) { const d = document.getElementById('admin-pin-d' + i); if (d) d.value = ''; }
       document.getElementById('admin-pin-d1')?.focus();
     }
   } catch(e) { err.textContent = '⚠ Error al verificar'; err.style.display = 'block'; }
 }
 
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
 function configurarNavegacion() {
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', function() {
@@ -217,6 +248,9 @@ function configurarNavegacion() {
   });
 }
 
+// ============================================================
+// PROYECTOS
+// ============================================================
 function mostrarFormProyecto() {
   if (!MODO_ADMIN) { showToast('⚠ Activa el modo administrador primero', 'error'); return; }
   document.getElementById('form-proyecto').style.display = 'block';
@@ -287,6 +321,9 @@ async function verRepresentantes(idProyecto) {
 
 function cerrarModalReps() { document.getElementById('modal-reps').classList.remove('open'); }
 
+// ============================================================
+// VOTAR
+// ============================================================
 function abrirEvalDesdeProyecto(idProyecto) {
   const proyecto = PROYECTOS_DATA.find(p => p.id == idProyecto);
   if (!proyecto) return;
@@ -350,11 +387,13 @@ async function cargarVotar() {
   } catch(e) { container.innerHTML = '<div class="empty-state">ERROR</div>'; }
 }
 
+// ============================================================
+// RESULTADOS
+// ============================================================
 async function toggleResultados() {
   if (!MODO_ADMIN) return;
   try {
     const pub = await supabaseQuery('resultados_publicos', 'GET', null, 'id=eq.1');
-    const btn = document.getElementById('btn-publicar-resultados');
     if (pub.length > 0 && pub[0].publico) {
       await supabaseQuery('resultados_publicos', 'PATCH', { publico: false }, 'id=eq.1');
       showToast('🔒 Resultados ocultados', 'success');
@@ -394,6 +433,9 @@ async function cargarResultados() {
   } catch(e) { container.innerHTML = '<div class="empty-state">ERROR</div>'; }
 }
 
+// ============================================================
+// MENÚ RESPONSIVE
+// ============================================================
 function toggleMenu() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('sidebar-overlay');
@@ -407,9 +449,13 @@ function cerrarMenu() {
   document.getElementById('hamburger-btn').textContent = '☰';
 }
 
+// ============================================================
+// INICIAR
+// ============================================================
 configurarNavegacion();
 cargarProyectos();
 document.getElementById('sidebar-overlay').onclick = cerrarMenu;
 document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', cerrarMenu));
-</script></body>
+</script>
+</body>
 </html>
