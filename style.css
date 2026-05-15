@@ -135,6 +135,30 @@ body { background: var(--bg); color: var(--text); font-family: var(--font-main);
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 3px; }
 
+/* ===== PIN DIGITS MEJORADOS ===== */
+.pin-digit {
+  width: 48px !important;
+  height: 55px !important;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--cyan);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  caret-color: var(--cyan);
+  transition: all 0.2s;
+}
+.pin-digit:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,58,92,0.15);
+  outline: none;
+  background: #fff;
+}
+.pin-digit::selection {
+  background: rgba(0,200,255,0.2);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   #screen-app { flex-direction: column; }
