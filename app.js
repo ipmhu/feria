@@ -365,35 +365,38 @@ async function cargarEmpate() {
 // ============================================================
 // MENÚ RESPONSIVE
 // ============================================================
-function configurarMenuResponsive() {
-  const hamburger = document.getElementById('hamburger-btn');
+function toggleMenu() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('hamburger-btn');
   
-  if (!hamburger || !sidebar || !overlay) return;
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+  btn.textContent = sidebar.classList.contains('open') ? '✕' : '☰';
+}
+
+function cerrarMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('hamburger-btn');
   
-  hamburger.addEventListener('click', function() {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('show');
-    if (sidebar.classList.contains('open')) {
-      hamburger.textContent = '✕';
-    } else {
-      hamburger.textContent = '☰';
-    }
-  });
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+  btn.textContent = '☰';
+}
+
+function configurarMenuResponsive() {
+  const overlay = document.getElementById('sidebar-overlay');
   
-  overlay.addEventListener('click', function() {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('show');
-    hamburger.textContent = '☰';
-  });
+  if (overlay) {
+    overlay.onclick = cerrarMenu;
+  }
   
   document.querySelectorAll('.nav-item').forEach(function(item) {
-    item.addEventListener('click', function() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-      hamburger.textContent = '☰';
-    });
+    item.addEventListener('click', cerrarMenu);
   });
 }
-console.log('🚀 Feria IPMU 2025 - Supabase Ready');
+
+// Hacer función global
+window.toggleMenu = toggleMenu;
+window.cerrarMenu = cerrarMenu;
