@@ -39,8 +39,13 @@
 
 <!-- ============ APP ============ -->
 <div id="screen-app" class="screen">
-      <!-- BOTÓN HAMBURGUESA (solo visible en celular) -->
-<button class="hamburger-btn" id="hamburger-btn">☰</button>  <aside class="sidebar">
+  
+  <!-- BOTÓN HAMBURGUESA (solo celular) -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="cerrarMenu()"></div>
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">Feria de Tecnología<br/>IPMHU</div>
       <div class="sidebar-sub">2025 — 2026</div>
@@ -53,12 +58,12 @@
       </div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" data-view="cursos"><span class="nav-icon">⬡</span> Cursos</div>
-      <div class="nav-item" data-view="rubrica"><span class="nav-icon">◈</span> Rúbrica</div>
-      <div class="nav-item" data-view="totales"><span class="nav-icon">◉</span> Totales</div>
-      <div class="nav-item" data-view="edicion"><span class="nav-icon">◎</span> Edición</div>
-      <div class="nav-item" data-view="evaluar"><span class="nav-icon">▷</span> Evaluar</div>
-      <div class="nav-item" data-view="empate"><span class="nav-icon">⚡</span> Desempate</div>
+      <div class="nav-item active" data-view="cursos" onclick="cerrarMenu()"><span class="nav-icon">⬡</span> Cursos</div>
+      <div class="nav-item" data-view="rubrica" onclick="cerrarMenu()"><span class="nav-icon">◈</span> Rúbrica</div>
+      <div class="nav-item" data-view="totales" onclick="cerrarMenu()"><span class="nav-icon">◉</span> Totales</div>
+      <div class="nav-item" data-view="edicion" onclick="cerrarMenu()"><span class="nav-icon">◎</span> Edición</div>
+      <div class="nav-item" data-view="evaluar" onclick="cerrarMenu()"><span class="nav-icon">▷</span> Evaluar</div>
+      <div class="nav-item" data-view="empate" onclick="cerrarMenu()"><span class="nav-icon">⚡</span> Desempate</div>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" id="btn-logout">⬡ CERRAR SESIÓN</button>
